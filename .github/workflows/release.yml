@@ -66,24 +66,17 @@ jobs:
       # Build Keyman package
       ####################################################################
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-
-      - name: Install Keyman Compiler
-        run: npm install -g @keymanapp/kmc
-
       - name: Build Keyman package
         id: keyman_artifact
         run: |
           mkdir -p keyman/dist
+          kmc build keyman/source/jatiyo.kmn
 
-          # Use the modern kmc command to build the .kps project directly
-          # This automatically compiles the .kmn and bundles the .kmp package
+          mkdir -p keyman/build
+          mv keyman/source/jatiyo.kmx keyman/source/jatiyo.js keyman/source/jatiyo.kvk keyman/build/
+
           kmc build keyman/source/jatiyo.kps
 
-          # Find the generated .kmp file
           KMP_FILE=$(find keyman -name "*.kmp" | head -n 1)
 
           if [[ -z "$KMP_FILE" ]]; then
@@ -92,7 +85,6 @@ jobs:
           fi
 
           FINAL_KMP="keyman/dist/jatiyo-${{ steps.version.outputs.version }}.kmp"
-
           cp "$KMP_FILE" "$FINAL_KMP"
 
           echo "path=${FINAL_KMP}" >> "$GITHUB_OUTPUT"
@@ -102,14 +94,14 @@ jobs:
       ####################################################################
 
       - name: Upload macOS installer artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: Jatiyo-Installer-${{ steps.version.outputs.version }}
           path: ${{ steps.macos_artifact.outputs.path }}
           if-no-files-found: error
 
       - name: Upload Keyman artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: jatiyo-kmp-${{ steps.version.outputs.version }}
           path: ${{ steps.keyman_artifact.outputs.path }}
