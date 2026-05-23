@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<visualkeyboard>
+  <header>
+    <version>10.0</version>
+    <kbdname>jatiyo</kbdname>
+    <flags/>
+  </header>
+  <encoding name="unicode" fontname="Arial" fontsize="-12">
+    <layer shift="SA">
+      <key vkey="K_4">৲</key>
+      <key vkey="K_A">ৠ</key>
+      <key vkey="K_C">ঐ</key>
+      <key vkey="K_D">ঈ</key>
+      <key vkey="K_F">ৱ</key>
+      <key vkey="K_L">ৡ</key>
+      <key vkey="K_Q">ৡ</key>
+      <key vkey="K_S">ঊ</key>
+      <key vkey="K_V">র্</key>
+      <key vkey="K_X">ঔ</key>
+    </layer>
+    <layer shift="A">
+      <key vkey="K_PERIOD">়</key>
+      <key vkey="K_0">৽</key>
+      <key vkey="K_1">৴</key>
+      <key vkey="K_2">৵</key>
+      <key vkey="K_3">৶</key>
+      <key vkey="K_4">৳</key>
+      <key vkey="K_5">৷</key>
+      <key vkey="K_6">৸</key>
+      <key vkey="K_7">৹</key>
+      <key vkey="K_A">ঋ</key>
+      <key vkey="K_C">এ</key>
+      <key vkey="K_D">ই</key>
+      <key vkey="K_E">ৄ</key>
+      <key vkey="K_F">ৰ</key>
+      <key vkey="K_G">৷</key>
+      <key vkey="K_H">আ</key>
+      <key vkey="K_J">ক্ষ</key>
+      <key vkey="K_K">ৎ</key>
+      <key vkey="K_L">ঌ</key>
+      <key vkey="K_Q">৽</key>
+      <key vkey="K_S">উ</key>
+      <key vkey="K_V">্র</key>
+      <key vkey="K_W">্য</key>
+      <key vkey="K_X">ও</key>
+      <key vkey="K_Z">৺</key>
+    </layer>
+    <layer shift="">
+      <key vkey="K_0">০</key>
+      <key vkey="K_1">১</key>
+      <key vkey="K_2">২</key>
+      <key vkey="K_3">৩</key>
+      <key vkey="K_4">৪</key>
+      <key vkey="K_5">৫</key>
+      <key vkey="K_6">৬</key>
+      <key vkey="K_7">৭</key>
+      <key vkey="K_8">৮</key>
+      <key vkey="K_9">৯</key>
+      <key vkey="K_A">ৃ</key>
+      <key vkey="K_B">ন</key>
+      <key vkey="K_C">ে</key>
+      <key vkey="K_D">ি</key>
+      <key vkey="K_E">ড</key>
+      <key vkey="K_F">ব</key>
+      <key vkey="K_G">্</key>
+      <key vkey="K_H">া</key>
+      <key vkey="K_I">হ</key>
+      <key vkey="K_J">ক</key>
+      <key vkey="K_K">ত</key>
+      <key vkey="K_L">দ</key>
+      <key vkey="K_M">ম</key>
+      <key vkey="K_N">স</key>
+      <key vkey="K_O">গ</key>
+      <key vkey="K_P">ড়</key>
+      <key vkey="K_Q">ঙ</key>
+      <key vkey="K_R">প</key>
+      <key vkey="K_S">ু</key>
+      <key vkey="K_T">ট</key>
+      <key vkey="K_U">জ</key>
+      <key vkey="K_V">র</key>
+      <key vkey="K_W">য</key>
+      <key vkey="K_X">ো</key>
+      <key vkey="K_Y">চ</key>
+      <key vkey="K_Z">ঁ</key>
+    </layer>
+    <layer shift="S">
+      <key vkey="K_A">ৗ</key>
+      <key vkey="K_B">ণ</key>
+      <key vkey="K_C">ৈ</key>
+      <key vkey="K_D">ী</key>
+      <key vkey="K_E">ঢ</key>
+      <key vkey="K_F">ভ</key>
+      <key vkey="K_G">৷</key>
+      <key vkey="K_H">অ</key>
+      <key vkey="K_I">ঞ</key>
+      <key vkey="K_J">খ</key>
+      <key vkey="K_K">থ</key>
+      <key vkey="K_L">ধ</key>
+      <key vkey="K_M">শ</key>
+      <key vkey="K_N">ষ</key>
+      <key vkey="K_O">ঘ</key>
+      <key vkey="K_P">ঢ়</key>
+      <key vkey="K_Q">ং</key>
+      <key vkey="K_R">ফ</key>
+      <key vkey="K_S">ূ</key>
+      <key vkey="K_T">ঠ</key>
+      <key vkey="K_U">ঝ</key>
+      <key vkey="K_V">ল</key>
+      <key vkey="K_W">য়</key>
+      <key vkey="K_X">ৌ</key>
+      <key vkey="K_Y">ছ</key>
+      <key vkey="K_Z">ঃ</key>
+    </layer>
+  </encoding>
+</visualkeyboard>

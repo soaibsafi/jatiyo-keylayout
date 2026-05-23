@@ -1,0 +1,231 @@
+name: Release Packages
+
+on:
+  push:
+    tags:
+      - "v*"
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version string to bake into the package (e.g. 1.0.0)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Packages
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          elif [[ -n "${{ inputs.version }}" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="0.0.0-${GITHUB_SHA::7}"
+          fi
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+          echo "Building version:"
+          echo "  ${VERSION}"
+
+      ####################################################################
+      # Build macOS installer
+      ####################################################################
+
+      - name: Build macOS installer
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          chmod +x ./macos-native/build-installer.sh
+          ./macos-native/build-installer.sh
+
+      - name: Rename macOS installer artifact
+        id: macos_artifact
+        run: |
+          ARTIFACT="macos-native/dist/Jatiyo-Installer-${{ steps.version.outputs.version }}.pkg"
+
+          mv \
+            macos-native/dist/Jatiyo-Installer.pkg \
+            "$ARTIFACT"
+
+          echo "path=${ARTIFACT}" >> "$GITHUB_OUTPUT"
+
+      ####################################################################
+      # Build Keyman package
+      ####################################################################
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install Keyman Compiler
+        run: npm install -g @keymanapp/kmc
+
+      - name: Build Keyman package
+        id: keyman_artifact
+        run: |
+          mkdir -p keyman/dist
+
+          # Use the modern kmc command to build the .kps project directly
+          # This automatically compiles the .kmn and bundles the .kmp package
+          kmc build keyman/source/jatiyo.kps
+
+          # Find the generated .kmp file
+          KMP_FILE=$(find keyman -name "*.kmp" | head -n 1)
+
+          if [[ -z "$KMP_FILE" ]]; then
+            echo "::error::Failed to build .kmp package"
+            exit 1
+          fi
+
+          FINAL_KMP="keyman/dist/jatiyo-${{ steps.version.outputs.version }}.kmp"
+
+          cp "$KMP_FILE" "$FINAL_KMP"
+
+          echo "path=${FINAL_KMP}" >> "$GITHUB_OUTPUT"
+
+      ####################################################################
+      # Upload workflow artifacts
+      ####################################################################
+
+      - name: Upload macOS installer artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: Jatiyo-Installer-${{ steps.version.outputs.version }}
+          path: ${{ steps.macos_artifact.outputs.path }}
+          if-no-files-found: error
+
+      - name: Upload Keyman artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: jatiyo-kmp-${{ steps.version.outputs.version }}
+          path: ${{ steps.keyman_artifact.outputs.path }}
+          if-no-files-found: error
+
+      ####################################################################
+      # GitHub Release
+      ####################################################################
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          name: Jatiyo ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            ${{ steps.macos_artifact.outputs.path }}
+            ${{ steps.keyman_artifact.outputs.path }}
+
+      - name: Bump Homebrew cask in tap
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          TAP_PUSH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+          TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO || 'soaibsafi/homebrew-jatiyo' }}
+          CASK_PATH: ${{ vars.HOMEBREW_CASK_PATH || 'Casks/jatiyo.rb' }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${TAP_PUSH_TOKEN:-}" ]]; then
+            echo "::error::TAP_PUSH_TOKEN secret is empty or unset; cannot bump the tap." >&2
+            echo "Set it in repo Settings → Secrets and variables → Actions." >&2
+            exit 1
+          fi
+
+          echo "TAP_PUSH_TOKEN is present (length=${#TAP_PUSH_TOKEN})"
+
+          # The Homebrew cask installs the keyboard layout files
+          # directly from the GitHub source tarball under:
+          #
+          #   macos-native/jatiyo.keylayout
+          #   macos-native/jatiyo.icns
+          #
+          # Therefore we hash the source tarball, not the .pkg.
+
+          SRC_URL="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG_NAME}.tar.gz"
+          SRC_TARBALL="$RUNNER_TEMP/source.tar.gz"
+
+          echo "Downloading source tarball:"
+          echo "  $SRC_URL"
+
+          for attempt in 1 2 3 4 5; do
+            if curl -fsSL --retry 3 -o "$SRC_TARBALL" "$SRC_URL"; then
+              break
+            fi
+
+            echo "Attempt $attempt failed; retrying in 5 seconds..." >&2
+            sleep 5
+          done
+
+          if [[ ! -s "$SRC_TARBALL" ]]; then
+            echo "::error::Failed to download source tarball." >&2
+            exit 1
+          fi
+
+          SHA256=$(shasum -a 256 "$SRC_TARBALL" | awk '{print $1}')
+
+          echo "Computed SHA256:"
+          echo "  $SHA256"
+
+          echo "Updating:"
+          echo "  Repo : ${TAP_REPO}"
+          echo "  Cask : ${CASK_PATH}"
+          echo "  Version : ${VERSION}"
+
+          WORK_DIR="$RUNNER_TEMP/tap"
+
+          rm -rf "$WORK_DIR"
+
+          git clone --depth=1 \
+            "https://x-access-token:${TAP_PUSH_TOKEN}@github.com/${TAP_REPO}.git" \
+            "$WORK_DIR"
+
+          CASK_FILE="$WORK_DIR/$CASK_PATH"
+
+          if [[ ! -f "$CASK_FILE" ]]; then
+            echo "::error::Cask file not found:"
+            echo "  ${CASK_PATH}"
+            echo ""
+            echo "Make sure the tap repository contains:"
+            echo "  ${CASK_PATH}"
+            exit 1
+          fi
+
+          echo "Updating cask file:"
+          echo "  $CASK_FILE"
+
+          # Update version and sha256.
+          /usr/bin/sed -i '' -E \
+            -e "1,/^[[:space:]]*version \"/ s|^([[:space:]]*version \").*(\")|\\1${VERSION}\\2|" \
+            -e "1,/^[[:space:]]*sha256 \"/ s|^([[:space:]]*sha256 \").*(\")|\\1${SHA256}\\2|" \
+            "$CASK_FILE"
+
+          cd "$WORK_DIR"
+
+          if git diff --quiet -- "$CASK_PATH"; then
+            echo "No changes detected in cask."
+            echo "Already at version ${VERSION}."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$CASK_PATH"
+          git commit -m "jatiyo ${VERSION}"
+          git push origin HEAD
+          echo "Homebrew cask updated successfully."
