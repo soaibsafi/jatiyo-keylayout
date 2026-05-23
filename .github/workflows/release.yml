@@ -70,12 +70,13 @@ jobs:
         id: keyman_artifact
         run: |
           mkdir -p keyman/dist
-          kmc build keyman/source/jatiyo.kmn
+
+          npx --yes @keymanapp/kmc build keyman/source/jatiyo.kmn
 
           mkdir -p keyman/build
           mv keyman/source/jatiyo.kmx keyman/source/jatiyo.js keyman/source/jatiyo.kvk keyman/build/
 
-          kmc build keyman/source/jatiyo.kps
+          npx --yes @keymanapp/kmc build keyman/source/jatiyo.kps
 
           KMP_FILE=$(find keyman -name "*.kmp" | head -n 1)
 
